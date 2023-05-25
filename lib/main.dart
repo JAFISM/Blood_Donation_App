@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crud_example/project1/add.dart';
 import 'package:firebase_crud_example/project1/home.dart';
+import 'package:firebase_crud_example/project1/splash_screen.dart';
 import 'package:firebase_crud_example/project1/update.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -41,8 +42,9 @@ class MyApp extends StatelessWidget {
                     MaterialStateColor.resolveWith((states) => Colors.white))),
         useMaterial3: true,
       ),
-      home: const HomePage(),
+      home: const SplashScreen(),
       routes: {
+        //'splash': (context) => const SplashScreen(),
         'home': (context) => const HomePage(),
         'add': (context) => const AddUser(),
         'update': (context) => const UpdateUser()

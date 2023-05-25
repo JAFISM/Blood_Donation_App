@@ -9,11 +9,29 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final CollectionReference donor =
+  final List<String> bloodGroups = [
+    'A+',
+    'A-',
+    'B+',
+    'B-',
+    'O+',
+    'O-',
+    'AB+',
+    'AB-'
+  ];
+  String? selectedGroup;
+
+  CollectionReference<Map<String, dynamic>> collectionRef =
       FirebaseFirestore.instance.collection('Donor');
 
   void deleteDonor(docId) {
-    donor.doc(docId).delete();
+    collectionRef.doc(docId).delete();
+  }
+
+  Future<void> searchDonorsByGroup(String bloodGroup) async {
+    setState(() {
+      selectedGroup = bloodGroup;
+    });
   }
 
   @override
@@ -24,19 +42,40 @@ class _HomePageState extends State<HomePage> {
           "Life Share",
           style: TextStyle(color: Colors.red),
         ),
-        backgroundColor: Colors.white,
-        leading: const Icon(
-          Icons.tune_rounded,
-          color: Colors.red,
+        bottom: AppBar(
+          leading: Container(),
+          actions: [
+            Expanded(
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                    border: Border.all(color: Colors.red, width: 2),
+                    borderRadius: BorderRadius.circular(15),
+                    color: Colors.red.withOpacity(0.1)),
+                child: DropdownButtonFormField(
+                  hint: const Text("Search Blood Group"),
+                  decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.only(left: 10)),
+                  padding: const EdgeInsets.all(5),
+                  isExpanded: false,
+                  focusColor: Colors.white,
+                  icon: const Icon(
+                    Icons.bloodtype,
+                    color: Colors.red,
+                  ),
+                  items: bloodGroups
+                      .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                      .toList(),
+                  onChanged: (val) {
+                    searchDonorsByGroup(val.toString());
+                  },
+                ),
+              ),
+            ),
+          ],
         ),
-        actions: [
-          IconButton(
-              onPressed: () {},
-              icon: const Icon(
-                Icons.search,
-                color: Colors.red,
-              ))
-        ],
+        backgroundColor: Colors.white,
       ),
       floatingActionButton: FloatingActionButton(
         tooltip: "Add Member",
@@ -44,7 +83,6 @@ class _HomePageState extends State<HomePage> {
         onPressed: () {
           Navigator.pushNamed(context, "add");
         },
-        // mini: true,
         child: const Icon(
           Icons.person_add_alt_1_rounded,
           size: 30,
@@ -52,21 +90,30 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.miniEndFloat,
-      body: StreamBuilder(
-        stream: donor.orderBy('group').snapshots(),
-        builder: (context, AsyncSnapshot snapshot) {
+      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: collectionRef.orderBy('group').snapshots(),
+        builder: (context, snapshot) {
           if (snapshot.hasData) {
+            List<QueryDocumentSnapshot<Map<String, dynamic>>> docs =
+                snapshot.data!.docs;
+
+            if (selectedGroup != null) {
+              docs =
+                  docs.where((doc) => doc['group'] == selectedGroup).toList();
+            }
+
             return Container(
               margin: EdgeInsets.symmetric(vertical: 15),
               child: ListView.builder(
-                itemCount: snapshot.data!.docs.length,
+                itemCount: docs.length,
                 itemBuilder: (context, index) {
-                  final DocumentSnapshot donorSnap = snapshot.data!.docs[index];
+                  final DocumentSnapshot<Map<String, dynamic>> donorSnap =
+                      docs[index];
                   return Container(
                     margin:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                     child: ListTile(
-                      tileColor: Colors.redAccent.withOpacity(0.1),
+                      tileColor: Colors.redAccent.withOpacity(0.05),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10)),
                       leading: CircleAvatar(
@@ -111,6 +158,7 @@ class _HomePageState extends State<HomePage> {
               ),
             );
           }
+
           return const Center(
               child: Padding(
             padding: EdgeInsets.only(left: 10, right: 10),
